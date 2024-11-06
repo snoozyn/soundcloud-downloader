@@ -1,6 +1,6 @@
 # SoundCloud Downloader GUI
 
-A simple Python application that allows users to download songs or playlists from SoundCloud as (allegedlt) high-quality MP3s. The application is built using tkinter for the graphical user interface and yt-dlp for handling audio extraction.
+A simple Python application that allows users to download songs or playlists from SoundCloud as (allegedly) high-quality MP3s. The application is built using tkinter for the graphical user interface and yt-dlp for handling audio extraction.
 
 ## Features
 
