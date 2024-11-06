@@ -1,6 +1,6 @@
 # SoundCloud Downloader GUI
 
-A simple Python application that allows users to download songs or playlists from SoundCloud as (allegedlt) high-quality MP3s. The application is built using tkinter for the graphical user interface and yt-dlp for handling audio extraction.
+A simple Python application that allows users to download songs or playlists from SoundCloud as (allegedly) high-quality MP3s. The application is built using tkinter for the graphical user interface and yt-dlp for handling audio extraction.
 
 ## Features
 
@@ -31,6 +31,11 @@ cd soundcloud-downloader-gui
 ```
 pip install -r requirements.txt
 ```
+3. Install Font Using Homebrew
+```
+brew install --cask font-fira-mono
+```
+This will install a commonly available monospaced font. If you need a specific "Mono" font, such as "Menlo" or "Hack", you can replace "font-fira-mono" with the desired font name.
 ### Usage
 
 1.	Run the application:
@@ -39,8 +44,8 @@ python soundcloud_downloader_gui.py
 ```
 2.	Enter the SoundCloud URL in the input field.
 3.	Select the download type:
-* Single Song
-* Playlist
+<img width="187" alt="image" src="https://github.com/user-attachments/assets/40d0ee3f-8e99-4bd0-b863-55ac7c4fae27">
+
 4.	Press “Enter” or click the Download button to start the download.
 5.	Check the output area for real-time feedback on the download process.
 
