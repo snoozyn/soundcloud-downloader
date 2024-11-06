@@ -39,8 +39,7 @@ python soundcloud_downloader_gui.py
 ```
 2.	Enter the SoundCloud URL in the input field.
 3.	Select the download type:
-* Single Song
-* Playlist
+<img width="187" alt="image" src="https://github.com/user-attachments/assets/40d0ee3f-8e99-4bd0-b863-55ac7c4fae27">
 4.	Press “Enter” or click the Download button to start the download.
 5.	Check the output area for real-time feedback on the download process.
 
