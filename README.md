@@ -31,6 +31,11 @@ cd soundcloud-downloader-gui
 ```
 pip install -r requirements.txt
 ```
+3. Install Font Using Homebrew
+```
+brew install --cask font-fira-mono
+```
+This will install a commonly available monospaced font. If you need a specific "Mono" font, such as "Menlo" or "Hack", you can replace "font-fira-mono" with the desired font name.
 ### Usage
 
 1.	Run the application:
