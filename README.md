@@ -57,6 +57,23 @@ python soundcloud_downloader_CLI.py
 3.	Select the download type (either single or playlist)\
 4.	Press “Enter”to start the download.
 5.	Check the output area for real-time feedback on the download process.
+
+### Verifying the Download
+You may be asking, are these really 320 kbps? I was asking that question too because honestly, it felt too good to be true. I performed a spectral analysis using the app **Spek** to see where the kHz cutoff was.
+Generally, the rule of thumb is as follows:
+* Cutoff at 11 kHz = 64 kbps.
+
+* Cutoff at 16 kHz = 128 kbps.
+
+* Cutoff at 19 kHz = 192 kbps.
+
+* Cutoff at 20 kHz = 320 kbps.
+
+* Cutoff at 22 kHz = 500 kbps.
+
+Using this, I checked one of the files I downloaded and this was the result:
+
+Which demonstrates that at a minimum, the files are actually being downloaded at 320 kbps. Allegedly...
 ## File Structure
 ```
 soundcloud-downloader-gui/
@@ -82,4 +99,3 @@ pip install -r requirements.txt
 ![image](https://github.com/user-attachments/assets/07564e8f-d56b-41cd-b4eb-6589c7c5ea16)
 ### Finished
 ![image](https://github.com/user-attachments/assets/98a2d9c9-bad0-4aad-ad84-17f132118d63)
-
