@@ -2,7 +2,6 @@ import os
 import subprocess
 import threading
 import re
-import sys
 
 # Regex pattern for URL validation
 URL_PATTERN = re.compile(
@@ -27,34 +26,28 @@ def download_song(url, download_type="single"):
 
     # Specify the path to the Downloads folder
     downloads_folder = os.path.expanduser("~/Downloads")
-    output_template = os.path.join(downloads_folder, "%(title)s - %(uploader)s.%(ext)s")
+    if download_type == "single":
+        # Output template for a single song
+        output_template = os.path.join(downloads_folder, "%(title)s - %(uploader)s.%(ext)s")
+    elif download_type == "playlist":
+        # Output template for a playlist (creates a folder with playlist title)
+        output_template = os.path.join(downloads_folder, "%(playlist_title)s", "%(title)s - %(uploader)s.%(ext)s")
 
     # Determine the download command based on the type
-    if download_type == "single":
-        # Command for downloading a single song
-        command = [
-            "yt-dlp",
-            "--extract-audio",
-            "--audio-format", "mp3",
-            "--audio-quality", "320K",
-            "--output", output_template,
-            "--embed-metadata",
-            "--embed-thumbnail",
-            url
-        ]
-    elif download_type == "playlist":
-        # Command for downloading a playlist
-        command = [
-            "yt-dlp",
-            "--yes-playlist",
-            "--extract-audio",
-            "--audio-format", "mp3",
-            "--audio-quality", "320K",
-            "--output", output_template,
-            "--embed-metadata",
-            "--embed-thumbnail",
-            url
-        ]
+    command = [
+        "yt-dlp",
+        "--extract-audio",
+        "--audio-format", "mp3",
+        "--audio-quality", "320K",
+        "--output", output_template,
+        "--embed-metadata",
+        "--embed-thumbnail",
+    ]
+
+    if download_type == "playlist":
+        command.append("--yes-playlist")
+
+    command.append(url)
 
     def run_command():
         try:
@@ -80,8 +73,8 @@ def download_song(url, download_type="single"):
 if __name__ == "__main__":
     print("Welcome to the SoundCloud Downloader CLI")
     while True:
-        url = input("Enter the SoundCloud URL (or type 'exit' to quit): ").strip()
-        if url.lower() == 'exit':
+        url = input("Enter the SoundCloud URL (or type 'q' or 'exit' to quit): ").strip()
+        if url.lower() in ['exit', 'q']:
             print("Goodbye!")
             break
         download_type = input("Enter download type (single/playlist): ").strip().lower()
