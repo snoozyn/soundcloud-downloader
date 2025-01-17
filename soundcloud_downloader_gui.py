@@ -25,43 +25,39 @@ URL_PATTERN = re.compile(
 def download_song(event=None):  # Add 'event' parameter for key binding
     url = entry.get().strip()
     if not url:
-        messagebox.showwarning("Input Error", "Please enter a URL.")
+        output_text.insert(tk.END, "Input Error: Please enter a URL.\n", "error")
+        output_text.see(tk.END)
         return
 
     if not re.match(URL_PATTERN, url):
-        messagebox.showwarning("Input Error", "Please enter a valid URL.")
+        output_text.insert(tk.END, "Input Error: Please enter a valid URL.\n", "error")
+        output_text.see(tk.END)
         return
 
     # Specify the path to the Downloads folder
     downloads_folder = os.path.expanduser("~/Downloads")
-    output_template = os.path.join(downloads_folder, "%(title)s - %(uploader)s.%(ext)s")
-
-    # Determine the download type based on the selected option
     if download_option.get() == "single":
-        # Command for downloading a single song
-        command = [
-            "yt-dlp",
-            "--extract-audio",
-            "--audio-format", "mp3",
-            "--audio-quality", "320K",
-            "--output", output_template,
-            "--embed-metadata",
-            "--embed-thumbnail",
-            url
-        ]
+        # Output template for a single song
+        output_template = os.path.join(downloads_folder, "%(title)s - %(uploader)s.%(ext)s")
     elif download_option.get() == "playlist":
-        # Command for downloading a playlist
-        command = [
-            "yt-dlp",
-            "--yes-playlist",  # Ensures that entire playlists are downloaded
-            "--extract-audio",
-            "--audio-format", "mp3",
-            "--audio-quality", "320K",
-            "--output", output_template,
-            "--embed-metadata",
-            "--embed-thumbnail",
-            url
-        ]
+        # Output template for a playlist (creates a folder with playlist title)
+        output_template = os.path.join(downloads_folder, "%(playlist_title)s", "%(title)s - %(uploader)s.%(ext)s")
+
+    # Determine the download command based on the type
+    command = [
+        "yt-dlp",
+        "--extract-audio",
+        "--audio-format", "mp3",
+        "--audio-quality", "320K",
+        "--output", output_template,
+        "--embed-metadata",
+        "--embed-thumbnail",
+    ]
+
+    if download_option.get() == "playlist":
+        command.append("--yes-playlist")
+
+    command.append(url)
 
     def run_command():
         try:
@@ -80,24 +76,19 @@ def download_song(event=None):  # Add 'event' parameter for key binding
             process.wait()
 
             if process.returncode == 0:
-                root.after(0, lambda: on_download_complete(success=True))
+                root.after(0, lambda: on_download_complete())
             else:
-                root.after(0, lambda: on_download_complete(success=False))
+                root.after(0, lambda: output_text.insert(tk.END, "Download failed. Please check the URL and try again.\n", "error"))
         except Exception as e:
-            root.after(0, lambda: messagebox.showerror("Error", f"An unexpected error occurred: {e}"))
+            root.after(0, lambda: output_text.insert(tk.END, f"An unexpected error occurred: {e}\n", "error"))
 
-    def on_download_complete(success):
-        if success:
-            messagebox.showinfo("Success", "Download complete!")
-            entry.delete(0, tk.END)  # Clear the input field
-        else:
-            messagebox.showerror("Error", "Download failed. Please check the URL and try again.")
+    def on_download_complete():
+        # Print "Done!" and reset the interface
+        output_text.insert(tk.END, "Done!\n", "success")
+        output_text.see(tk.END)
+        entry.delete(0, tk.END)  # Clear the input field
+        output_text.after(2000, lambda: output_text.delete(1.0, tk.END))  # Clear the output text after 2 seconds
 
-        # Clear the output text after download completes
-        output_text.delete(1.0, tk.END)
-
-    # Clear previous output and run the command in a separate thread
-    output_text.delete(1.0, tk.END)
     threading.Thread(target=run_command).start()
 
 # Create GUI window
@@ -141,6 +132,7 @@ output_text.pack(padx=5, pady=5)
 output_text.tag_configure("normal", foreground=TEXT_COLOR)
 output_text.tag_configure("error", foreground="#ff4d4d")  # Red for errors
 output_text.tag_configure("warning", foreground="#ffa500")  # Orange for warnings
+output_text.tag_configure("success", foreground="#32cd32")  # Green for success
 
 # Run the GUI event loop
 root.mainloop()
