@@ -72,6 +72,7 @@ Generally, the rule of thumb is as follows:
 * Cutoff at 22 kHz = 500 kbps.
 
 Using this, I checked one of the files I downloaded and this was the result:
+![image](https://github.com/user-attachments/assets/97439c4f-70a9-42a0-a0d1-926e167d58f6)
 
 Which demonstrates that at a minimum, the files are actually being downloaded at 320 kbps. Allegedly...
 ## File Structure
