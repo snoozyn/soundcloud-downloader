@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import streamlit as st
+import tempfile
 
 # Define the URL pattern for validation
 URL_PATTERN = re.compile(
@@ -24,49 +25,45 @@ def download_song(url, download_type='single'):
     if not validate_url(url):
         return "Invalid URL. Please provide a valid SoundCloud URL."
 
-    # Print for debugging to confirm URL
-    print(f"Downloading URL: {url}")
-
     try:
-        # Dynamically get the user's Downloads folder
-        download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+        # Use a temporary directory to store the downloaded files
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_template = os.path.join(temp_dir, '%(title)s.%(ext)s')
 
-        # Check if the Downloads folder exists
-        if not os.path.exists(download_folder):
-            raise FileNotFoundError(f"Downloads folder not found at {download_folder}")
+            # Define the command for yt-dlp
+            command = [
+                "yt-dlp",
+                "--extract-audio",
+                "--audio-format", "mp3",
+                "--audio-quality", "320K",
+                "--output", output_template,
+                "--embed-metadata",
+                "--embed-thumbnail",
+                url
+            ]
 
-        # Template for the output file
-        output_template = os.path.join(download_folder, '%(title)s.%(ext)s')
+            # Handle playlist/single download
+            if download_type == 'playlist':
+                command.append("--yes-playlist")
+            else:
+                command.append("--no-playlist")
 
-        # Define the command for yt-dlp
-        command = [
-            "yt-dlp",
-            "--extract-audio",
-            "--audio-format", "mp3",
-            "--audio-quality", "320K",
-            "--output", output_template,
-            "--embed-metadata",
-            "--embed-thumbnail",
-            url  # Add the URL to the command
-        ]
+            # Execute the download command
+            subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        # If the download type is playlist, add the flag to allow playlists
-        if download_type == 'playlist':
-            command.append("--yes-playlist")
+            # Collect all downloaded files
+            downloaded_files = []
+            for filename in os.listdir(temp_dir):
+                file_path = os.path.join(temp_dir, filename)
+                if os.path.isfile(file_path) and filename.endswith('.mp3'):
+                    with open(file_path, "rb") as f:
+                        file_data = f.read()
+                    downloaded_files.append((filename, file_data))
 
-        # Print the full command for debugging
-        print(f"Running command: {' '.join(command)}")
-
-        # Run the yt-dlp command and capture both stdout and stderr
-        result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-
-        # If successful, return the output message
-        return f"Download completed successfully! Output: {result.stdout}"
+            return downloaded_files if downloaded_files else "No files were downloaded."
 
     except subprocess.CalledProcessError as e:
-        # Capture and display both stdout and stderr for debugging
-        error_message = f"An error occurred: {e.stderr}"
-        return error_message
+        return f"Download failed: {e.stderr.decode()}"
     except Exception as e:
         return f"An error occurred: {str(e)}"
 
@@ -78,18 +75,25 @@ def main():
     # URL input field
     url = st.text_input("Enter SoundCloud URL:")
 
-    # Dropdown for download type (single or playlist)
+    # Dropdown for download type
     download_type = st.selectbox("Select download type", ("single", "playlist"))
 
-    # If the user presses 'Enter' or clicks the button, initiate the download
-    if st.button("Download") or url:
+    # Initiate download only when button is clicked
+    if st.button("Download"):
         if url:
-            result_message = download_song(url, download_type)
-            # Display result message correctly as a success or error
-            if "Download completed successfully" in result_message:
-                st.success(result_message)
+            result = download_song(url, download_type)
+
+            if isinstance(result, list):
+                for filename, file_data in result:
+                    st.download_button(
+                        label=f"Download {filename}",
+                        data=file_data,
+                        file_name=filename,
+                        mime="audio/mpeg"
+                    )
+                st.success("Download completed!")
             else:
-                st.error(result_message)
+                st.error(result)
         else:
             st.warning("Please enter a valid URL.")
 
