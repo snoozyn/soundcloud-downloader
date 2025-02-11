@@ -8,15 +8,6 @@ from PIL import Image
 from io import BytesIO
 import requests
 
-# Define the URL pattern for validation
-URL_PATTERN = re.compile(
-    r'^(https?:\/\/)?(www\.)?(soundcloud\.com)\/[\w\-\/]+$', re.IGNORECASE
-)
-
-def validate_url(url):
-    """Validate if the provided URL is a valid SoundCloud URL"""
-    return re.match(URL_PATTERN, url) is not None
-
 def get_metadata(url):
     """Fetch metadata (title, thumbnail, duration) for the SoundCloud track"""
     try:
@@ -53,9 +44,6 @@ def get_metadata(url):
 
 def download_song(url, download_type='audio'):
     """Download song or playlist from SoundCloud using yt-dlp"""
-    if not validate_url(url):
-        return "Invalid URL. Please provide a valid SoundCloud URL."
-
     try:
         # Use a temporary directory to store the downloaded file
         with tempfile.TemporaryDirectory() as temp_dir:
