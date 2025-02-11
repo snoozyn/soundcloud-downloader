@@ -1,14 +1,9 @@
 import os
+import re
 import subprocess
-import re  # Import the regular expressions module
 import streamlit as st
 
-# Custom color scheme
-BG_COLOR = "#1e1e1e"  # Dark background color
-TEXT_COLOR = "#c5c5c5"  # Light text color for readability
-ENTRY_COLOR = "#2d2d2d"  # Slightly lighter color for entry fields
-
-# Regex pattern for URL validation
+# Define the URL pattern for validation
 URL_PATTERN = re.compile(
     r'^(https?|ftp):\/\/'  # http:// or https://
     r'(([A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+'  # domain...
@@ -20,89 +15,83 @@ URL_PATTERN = re.compile(
     r'(\?[A-Z0-9+&@#\/%=~_|$?!:.,]*)?$', re.IGNORECASE
 )
 
-def download_song(url, download_option, output_area, url_input):
-    if not url:
-        output_area.text("Input Error: Please enter a URL.")
-        return
+def validate_url(url):
+    """Validate if the provided URL matches the URL_PATTERN"""
+    return re.match(URL_PATTERN, url) is not None
 
-    if not re.match(URL_PATTERN, url):
-        output_area.text("Input Error: Please enter a valid URL.")
-        return
+def download_song(url, download_type='single'):
+    """Download song or playlist from SoundCloud using yt-dlp CLI command"""
+    if not validate_url(url):
+        return "Invalid URL. Please provide a valid SoundCloud URL."
 
-    # Specify the path to the Downloads folder
-    downloads_folder = os.path.expanduser("~/Downloads")
-    if download_option == "single":
-        # Output template for a single song
-        output_template = os.path.join(downloads_folder, "%(title)s - %(uploader)s.%(ext)s")
-    elif download_option == "playlist":
-        # Output template for a playlist (creates a folder with playlist title)
-        output_template = os.path.join(downloads_folder, "%(playlist_title)s", "%(title)s - %(uploader)s.%(ext)s")
-
-    # Determine the download command based on the type
-    command = [
-        "yt-dlp",
-        "--extract-audio",
-        "--audio-format", "mp3",
-        "--audio-quality", "320K",
-        "--output", output_template,
-        "--embed-metadata",
-        "--embed-thumbnail",
-    ]
-
-    if download_option == "playlist":
-        command.append("--yes-playlist")
-
-    command.append(url)
+    # Print for debugging to confirm URL
+    print(f"Downloading URL: {url}")
 
     try:
-        process = subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
-        )
+        # Dynamically get the user's Downloads folder
+        download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
 
-        # Initialize output content
-        output = "Download started...\n"
-        output_area.text(output)  # Initial output before starting the process
+        # Check if the Downloads folder exists
+        if not os.path.exists(download_folder):
+            raise FileNotFoundError(f"Downloads folder not found at {download_folder}")
 
-        # Capture and display the output in real-time
-        for line in process.stdout:
-            output += line  # Append each line to the output string
-            output_area.text(output)  # Update the output in the Streamlit app
+        # Template for the output file
+        output_template = os.path.join(download_folder, '%(title)s.%(ext)s')
 
-        process.wait()
+        # Define the command for yt-dlp
+        command = [
+            "yt-dlp",
+            "--extract-audio",
+            "--audio-format", "mp3",
+            "--audio-quality", "320K",
+            "--output", output_template,
+            "--embed-metadata",
+            "--embed-thumbnail",
+            url  # Add the URL to the command
+        ]
 
-        if process.returncode == 0:
-            output += "\nDownload completed!"
-        else:
-            output += "\nDownload failed. Please check the URL and try again."
+        # If the download type is playlist, add the flag to allow playlists
+        if download_type == 'playlist':
+            command.append("--yes-playlist")
 
-        # Clear the input field after the download is complete
-        url_input.text("")  # Clear the input field
+        # Print the full command for debugging
+        print(f"Running command: {' '.join(command)}")
 
-        output_area.text(output)  # Display final output
+        # Run the yt-dlp command and capture both stdout and stderr
+        result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
+        # If successful, return the output message
+        return f"Download completed successfully! Output: {result.stdout}"
+
+    except subprocess.CalledProcessError as e:
+        # Capture and display both stdout and stderr for debugging
+        error_message = f"An error occurred: {e.stderr}"
+        return error_message
     except Exception as e:
-        output_area.text(f"An unexpected error occurred: {e}")
+        return f"An error occurred: {str(e)}"
 
-# Streamlit layout
-st.title("SoundCloud Downloader")
-st.markdown("Enter a SoundCloud URL and choose the download option:")
+def main():
+    """Main Streamlit function for the app interface"""
+    st.title("SoundCloud Downloader")
+    st.subheader("Enter the SoundCloud URL and start your download!")
 
-# Input for URL
-url_input = st.text_input("Enter SoundCloud URL:")
+    # URL input field
+    url = st.text_input("Enter SoundCloud URL:")
 
-# Function to handle Return key press
-def on_return_key():
-    url = url_input  # Get URL from the input field
-    if url:
-        download_song(url, download_option, output_area, url_input)
-    else:
-        output_area.text("Please enter a URL.")
+    # Dropdown for download type (single or playlist)
+    download_type = st.selectbox("Select download type", ("single", "playlist"))
 
-# Button to trigger the download directly
-st.button("Download", on_click=on_return_key)
+    # If the user presses 'Enter' or clicks the button, initiate the download
+    if st.button("Download") or url:
+        if url:
+            result_message = download_song(url, download_type)
+            # Display result message correctly as a success or error
+            if "Download completed successfully" in result_message:
+                st.success(result_message)
+            else:
+                st.error(result_message)
+        else:
+            st.warning("Please enter a valid URL.")
 
-# Radio buttons for download options
-download_option = st.radio("Select Download Option", ["single", "playlist"])
-
-# Create an empty container for output
-output_area = st.empty()
+if __name__ == "__main__":
+    main()
