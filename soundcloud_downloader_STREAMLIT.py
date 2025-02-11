@@ -10,11 +10,7 @@ import requests
 
 # Define the URL pattern for validation
 URL_PATTERN = re.compile(
-    r'^(https?):\/\/'  # http:// or https://
-    r'(www\.)?soundcloud\.com\/'  # SoundCloud domain
-    r'([a-zA-Z0-9_-]+)\/'  # User or track identifier
-    r'([a-zA-Z0-9_-]+)',  # Track or playlist identifier
-    re.IGNORECASE
+    r'^(https?:\/\/)?(www\.)?(soundcloud\.com)\/[\w\-\/]+$', re.IGNORECASE
 )
 
 def validate_url(url):
@@ -66,14 +62,16 @@ def download_song(url, download_type='audio'):
             output_template = os.path.join(temp_dir, '%(title)s.%(ext)s')
 
             # Define the command for yt-dlp
+            ffmpeg_path = os.path.abspath("./ffmpeg_bin/ffmpeg")
             command = [
                 "yt-dlp",
-                "--extract-audio" if download_type == 'audio' else "",
+                "--extract-audio",
                 "--audio-format", "mp3",
                 "--audio-quality", "320K",
                 "--output", output_template,
                 "--embed-metadata",
                 "--embed-thumbnail",
+                f"--ffmpeg-location={ffmpeg_path}",  # Specify custom ffmpeg path
                 url
             ]
 
