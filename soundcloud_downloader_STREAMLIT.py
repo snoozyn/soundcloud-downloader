@@ -3,37 +3,72 @@ import re
 import subprocess
 import streamlit as st
 import tempfile
+from datetime import timedelta
+from PIL import Image
+from io import BytesIO
+import requests
 
 # Define the URL pattern for validation
 URL_PATTERN = re.compile(
-    r'^(https?|ftp):\/\/'  # http:// or https://
-    r'(([A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+'  # domain...
-    r'[A-Z]{2,6}\.?|'  # domain extension (e.g., .com, .net)
-    r'localhost|'  # localhost...
-    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or IPv4
-    r'(:\d+)?'  # optional port
-    r'(\/[-A-Z0-9+&@#\/%=~_|$?!:.,]*)?'  # resource path
-    r'(\?[A-Z0-9+&@#\/%=~_|$?!:.,]*)?$', re.IGNORECASE
+    r'^(https?):\/\/'  # http:// or https://
+    r'(www\.)?soundcloud\.com\/'  # SoundCloud domain
+    r'([a-zA-Z0-9_-]+)\/'  # User or track identifier
+    r'([a-zA-Z0-9_-]+)',  # Track or playlist identifier
+    re.IGNORECASE
 )
 
 def validate_url(url):
-    """Validate if the provided URL matches the URL_PATTERN"""
+    """Validate if the provided URL is a valid SoundCloud URL"""
     return re.match(URL_PATTERN, url) is not None
 
-def download_song(url, download_type='single'):
-    """Download song or playlist from SoundCloud using yt-dlp CLI command"""
+def get_metadata(url):
+    """Fetch metadata (title, thumbnail, duration) for the SoundCloud track"""
+    try:
+        # Use yt-dlp to extract metadata
+        command = [
+            "yt-dlp",
+            "--skip-download",
+            "--print-json",
+            url
+        ]
+        result = subprocess.run(command, capture_output=True, text=True)
+        metadata = result.stdout.strip()
+
+        if not metadata:
+            st.error("Failed to fetch metadata. Please check the URL.")
+            return None
+
+        # Parse metadata
+        import json
+        metadata = json.loads(metadata)
+        title = metadata.get("title", "Unknown Title")
+        thumbnail = metadata.get("thumbnail", "")
+        duration = metadata.get("duration", 0)  # Duration in seconds
+
+        return {
+            "title": title,
+            "thumbnail": thumbnail,
+            "duration": timedelta(seconds=duration)
+        }
+
+    except Exception as e:
+        st.error(f"Failed to fetch metadata: {str(e)}")
+        return None
+
+def download_song(url, download_type='audio'):
+    """Download song or playlist from SoundCloud using yt-dlp"""
     if not validate_url(url):
         return "Invalid URL. Please provide a valid SoundCloud URL."
 
     try:
-        # Use a temporary directory to store the downloaded files
+        # Use a temporary directory to store the downloaded file
         with tempfile.TemporaryDirectory() as temp_dir:
             output_template = os.path.join(temp_dir, '%(title)s.%(ext)s')
 
             # Define the command for yt-dlp
             command = [
                 "yt-dlp",
-                "--extract-audio",
+                "--extract-audio" if download_type == 'audio' else "",
                 "--audio-format", "mp3",
                 "--audio-quality", "320K",
                 "--output", output_template,
@@ -42,28 +77,26 @@ def download_song(url, download_type='single'):
                 url
             ]
 
-            # Handle playlist/single download
-            if download_type == 'playlist':
-                command.append("--yes-playlist")
-            else:
-                command.append("--no-playlist")
+            # Remove empty arguments
+            command = [arg for arg in command if arg]
 
-            # Execute the download command
-            subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            # Run the yt-dlp command
+            result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-            # Collect all downloaded files
-            downloaded_files = []
+            # Find the downloaded file path
+            downloaded_file = None
             for filename in os.listdir(temp_dir):
-                file_path = os.path.join(temp_dir, filename)
-                if os.path.isfile(file_path) and filename.endswith('.mp3'):
-                    with open(file_path, "rb") as f:
-                        file_data = f.read()
-                    downloaded_files.append((filename, file_data))
+                if filename.endswith('.mp3'):
+                    downloaded_file = os.path.join(temp_dir, filename)
+                    break
 
-            return downloaded_files if downloaded_files else "No files were downloaded."
+            if downloaded_file:
+                return downloaded_file
+            else:
+                return "No file was downloaded."
 
     except subprocess.CalledProcessError as e:
-        return f"Download failed: {e.stderr.decode()}"
+        return f"Download failed: {e.stderr}"
     except Exception as e:
         return f"An error occurred: {str(e)}"
 
@@ -75,27 +108,36 @@ def main():
     # URL input field
     url = st.text_input("Enter SoundCloud URL:")
 
-    # Dropdown for download type
-    download_type = st.selectbox("Select download type", ("single", "playlist"))
+    if url:
+        # Fetch and display metadata
+        metadata = get_metadata(url)
+        if metadata:
+            st.header(f"**{metadata['title']}**")
+            if metadata["thumbnail"]:
+                st.image(metadata["thumbnail"], width=750)
+            st.write(f"Duration: **{metadata['duration']}**")
 
-    # Initiate download only when button is clicked
-    if st.button("Download"):
-        if url:
-            result = download_song(url, download_type)
+        # Download options
+        download_type = st.radio(
+            "Select the type of download you would like",
+            ["Audio Only (.mp3)"]
+        )
 
-            if isinstance(result, list):
-                for filename, file_data in result:
-                    st.download_button(
-                        label=f"Download {filename}",
-                        data=file_data,
-                        file_name=filename,
-                        mime="audio/mpeg"
-                    )
-                st.success("Download completed!")
-            else:
-                st.error(result)
-        else:
-            st.warning("Please enter a valid URL.")
+        if st.button("Download"):
+            with st.spinner(f"Downloading {metadata['title']}... Please wait..."):
+                downloaded_file = download_song(url, download_type)
+
+                if os.path.exists(downloaded_file):
+                    with open(downloaded_file, "rb") as f:
+                        st.download_button(
+                            label="Download Audio File",
+                            data=f,
+                            file_name=os.path.basename(downloaded_file),
+                            mime="audio/mpeg"
+                        )
+                    st.success(f"Download ready: {os.path.basename(downloaded_file)}")
+                else:
+                    st.error(f"An error occurred: {downloaded_file}")
 
 if __name__ == "__main__":
     main()
