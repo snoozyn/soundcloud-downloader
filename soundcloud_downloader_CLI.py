@@ -17,6 +17,7 @@ URL_PATTERN = re.compile(
 )
 
 def download_song(url, download_type="single"):
+    """Handle the download process using yt-dlp."""
     if not url:
         print("Input Error: Please enter a URL.")
         return
@@ -25,16 +26,12 @@ def download_song(url, download_type="single"):
         print("Input Error: Please enter a valid URL.")
         return
 
-    # Specify the path to the Downloads folder
     downloads_folder = user_downloads_dir()
     if download_type == "single":
-        # Output template for a single song
         output_template = os.path.join(downloads_folder, "%(title)s - %(uploader)s.%(ext)s")
     elif download_type == "playlist":
-        # Output template for a playlist (creates a folder with playlist title)
         output_template = os.path.join(downloads_folder, "%(playlist_title)s", "%(title)s - %(uploader)s.%(ext)s")
 
-    # Determine the download command based on the type
     command = [
         "yt-dlp",
         "--extract-audio",
@@ -52,13 +49,8 @@ def download_song(url, download_type="single"):
 
     def run_command():
         try:
-            process = subprocess.Popen(
-                command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
-            )
-            for line in process.stdout:
-                print(line.strip())
+            process = subprocess.Popen(command)
             process.wait()
-
             if process.returncode == 0:
                 print("\nDownload complete!")
             else:
@@ -66,21 +58,49 @@ def download_song(url, download_type="single"):
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
-    # Run the command in a separate thread
     thread = threading.Thread(target=run_command)
     thread.start()
-    thread.join()  # Wait for the download to complete before reprompting
+    thread.join()
 
 if __name__ == "__main__":
     print("Welcome to the SoundCloud Downloader CLI")
     while True:
+        # Get and validate URL
         url = input("Enter the SoundCloud URL (or type 'q' or 'exit' to quit): ").strip()
         if url.lower() in ['exit', 'q']:
             print("Goodbye!")
             break
-        download_type = input("Enter download type (single/playlist): ").strip().lower()
+        if not url:
+            print("Please enter a URL.")
+            continue
+        if not re.match(URL_PATTERN, url):
+            print("Input Error: Please enter a valid URL.")
+            continue
+        if "soundcloud.com" not in url.lower():
+            print("Please enter a SoundCloud URL.")
+            continue
 
-        if download_type not in ["single", "playlist"]:
-            print("Invalid download type. Please enter 'single' or 'playlist'.")
-        else:
+        # Get and validate download type
+        download_type = None
+        while True:
+            print("Select download type:")
+            print("1. Single song")
+            print("2. Playlist")
+            choice = input("Enter 1, 2, 'single', or 'playlist' (or 'q' to go back): ").strip().lower()
+            if choice in ['exit', 'q']:
+                break  # Return to URL prompt
+            if not choice:
+                print("Please select a download type.")
+                continue
+            if choice in ['1', 'single']:
+                download_type = "single"
+                break
+            elif choice in ['2', 'playlist']:
+                download_type = "playlist"
+                break
+            else:
+                print("Invalid choice. Please enter 1, 2, 'single', or 'playlist'.")
+
+        # Proceed with download if a valid type was selected
+        if download_type:
             download_song(url, download_type)
