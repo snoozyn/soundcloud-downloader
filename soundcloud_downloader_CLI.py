@@ -2,6 +2,7 @@ import os
 import subprocess
 import threading
 import re
+from platformdirs import user_downloads_dir
 
 # Regex pattern for URL validation
 URL_PATTERN = re.compile(
@@ -25,7 +26,7 @@ def download_song(url, download_type="single"):
         return
 
     # Specify the path to the Downloads folder
-    downloads_folder = os.path.expanduser("~/Downloads")
+    downloads_folder = user_downloads_dir()
     if download_type == "single":
         # Output template for a single song
         output_template = os.path.join(downloads_folder, "%(title)s - %(uploader)s.%(ext)s")
