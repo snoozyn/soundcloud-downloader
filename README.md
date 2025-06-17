@@ -1,43 +1,51 @@
 # SoundCloud Downloader
 
-A simple Python application that allows users to download songs or playlists from SoundCloud as (allegedly) high-quality MP3s. The application is built using **Streamlit** for the graphical user interface and **yt-dlp** for handling audio extraction. The CLI version is a standalone wrapper for `yt-dlp`.
+A simple Python CLI application that allows users to download songs or playlists from SoundCloud as (allegedly) high-quality MP3s. The application uses **yt-dlp** for handling audio extraction.
 
 ## Features
 
-- **Graphical User Interface (GUI)** built with Streamlit.
 - **Download Options**:
   - Single song download.
   - Playlist download.
-- **Real-time Command Output** with color-coded messages:
-  - Normal output in standard text color.
-  - Errors highlighted in red.
-  - Warnings highlighted in orange.
-- Easy-to-use **Input field** that triggers downloads with the “Enter” key.
-- Feedback with **Alerts** for successful or failed downloads.
+- **Real-time Command Output** with error messages for invalid URLs or failed downloads.
+- Easy-to-use **CLI interface** with prompted inputs for URLs and download types.
 
 ## Prerequisites
 
-Ensure you have Python installed (version 3.6 or higher recommended). You’ll also need to install `ffmpeg`, a critical dependency for audio processing, along with the Python packages listed in `requirements.txt`.
+Ensure you have Python installed (version 3.6 or higher recommended). You’ll also need to install `ffmpeg`, a critical dependency for audio processing.
 
-### Installation
+## Installation
 
 1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/yourusername/soundcloud-downloader-gui.git
-   cd soundcloud-downloader-gui
+   git clone https://github.com/yourusername/soundcloud-downloader.git
+   cd soundcloud-downloader
    ```
 
-2. **Install Python Dependencies:**
-   Install the required Python packages using `requirements.txt`:
+2. **Set Up a Virtual Environment:**
+   To isolate dependencies, create and activate a virtual environment:
+   - **Windows:**
+     ```bash
+     python -m venv venv
+     .\venv\Scripts\activate
+     ```
+   - **macOS/Linux:**
+     ```bash
+     python3 -m venv venv
+     source venv/bin/activate
+     ```
+   After activation, your terminal prompt should indicate the virtual environment (e.g., `(venv)`).
+
+3. **Install Python Dependencies:**
+   Inside the virtual environment, install the required Python packages:
    ```bash
    pip install -r requirements.txt
    ```
    This installs:
    - `yt-dlp`: For downloading and extracting audio.
-   - `streamlit`: For the GUI.
-   - `ttkbootstrap`: For enhanced widget styling.
+   - `platformdirs`: For cross-platform directory handling.
 
-3. **Install `ffmpeg`:**
+4. **Install `ffmpeg`:**
    `yt-dlp` requires `ffmpeg` for audio conversion and metadata embedding. Install it based on your operating system:
 
    - **Windows:**
@@ -62,50 +70,37 @@ Ensure you have Python installed (version 3.6 or higher recommended). You’ll a
      - Arch: `sudo pacman -S ffmpeg`
      Verify: `ffmpeg -version`.
 
-4. **Install a Monospaced Font (macOS Optional):**
-   For better CLI/GUI readability, install a monospaced font like Fira Mono:
+5. **Install a Monospaced Font (macOS Optional):**
+   For better CLI readability, install a monospaced font like Fira Mono:
    ```bash
    brew install --cask font-fira-mono
    ```
    Replace `font-fira-mono` with `font-menlo` or `font-hack` if preferred. On Windows/Linux, default monospaced fonts (e.g., Consolas, DejaVu Sans Mono) are typically sufficient.
 
-### Usage - GUI
+## Usage - CLI
 
-1. Run the Streamlit application:
-   ```bash
-   streamlit run soundcloud_downloader_gui.py
-   ```
+1. **Activate the Virtual Environment:**
+   Ensure the virtual environment is active:
+   - **Windows:** `.\venv\Scripts\activate`
+   - **macOS/Linux:** `source venv/bin/activate`
 
-2. Open your browser (it should auto-open to `http://localhost:8501`).
-3. Enter a SoundCloud URL in the input field.
-4. Select the download type (Single song or Playlist):
-
-   ![image](https://github.com/user-attachments/assets/40d0ee3f-8e99-4bd0-b863-55ac7c4fae27)
-
-5. Press **“Enter”** or click the **Download** button to start the download.
-6. Check the output area for real-time feedback.
-
-### Usage - CLI
-
-1. Run the CLI application:
+2. **Run the CLI Application:**
    ```bash
    python soundcloud_downloader_CLI.py
    ```
 
-2. Enter a SoundCloud URL when prompted.
-3. Select the download type (either `single` or `playlist`).
-4. Press **“Enter”** to start the download.
-5. Monitor the terminal for real-time feedback.
+3. Enter a SoundCloud URL when prompted.
+4. Select the download type (`single` or `playlist`).
+5. Press **Enter** to start the download.
+6. Monitor the terminal for real-time feedback.
 
-### Usage - Streamlit (Alternative)
-If you have a separate `soundcloud_downloader_STREAMLIT.py` file:
-1. Run:
+7. **Deactivate the Virtual Environment (Optional):**
+   When done, deactivate the virtual environment:
    ```bash
-   streamlit run soundcloud_downloader_STREAMLIT.py
+   deactivate
    ```
-2. Navigate to `http://localhost:8501` (note: Streamlit’s default port is 8501, not 5000).
 
-### Verifying the Download
+## Verifying the Download
 Are these really 320 kbps files? To confirm, I performed a spectral analysis using **Spek** (download from [spek.cc](http://spek.cc/)). Here’s the rule of thumb:
 - Cutoff at 11 kHz = 64 kbps.
 - Cutoff at 16 kHz = 128 kbps.
@@ -120,9 +115,8 @@ This suggests the files are at least 320 kbps, as claimed.
 
 ## File Structure
 ```
-soundcloud-downloader-gui/
+soundcloud-downloader/
 |
-├── soundcloud_downloader_gui.py   # Main GUI script
 ├── soundcloud_downloader_CLI.py   # CLI script
 ├── requirements.txt               # Python dependencies
 └── README.md                      # Project documentation
@@ -131,8 +125,7 @@ soundcloud-downloader-gui/
 ## Dependencies
 
 - **yt-dlp**: Downloads audio from SoundCloud and other platforms.
-- **streamlit**: Creates the web-based GUI.
-- **ttkbootstrap**: Enhances Streamlit widget styling.
+- **platformdirs**: Handles cross-platform directory paths.
 - **ffmpeg**: Processes audio files (required by `yt-dlp`).
 
 Install Python dependencies via:
@@ -144,5 +137,4 @@ pip install -r requirements.txt
 - **“ffmpeg not found” Error:** Ensure `ffmpeg` is installed and in your PATH (run `ffmpeg -version` to check).
 - **Download Fails:** Verify the SoundCloud URL is valid and public. Some tracks may require authentication.
 - **Font Issues:** If text looks misaligned, install a monospaced font as noted above.
-
----
+- **Module Not Found Errors:** Ensure the virtual environment is active and dependencies are installed (`pip install -r requirements.txt`).
