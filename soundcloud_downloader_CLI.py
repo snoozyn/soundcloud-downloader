@@ -5,7 +5,11 @@ from platformdirs import user_downloads_dir
 
 URL_PATTERN = re.compile(r"^https?://(www\.)?soundcloud\.com/.+", re.IGNORECASE)
 
+<<<<<<< HEAD
 def download_song(url: str, download_type: str = "single"):
+=======
+def download_song(url, download_type="single"):
+>>>>>>> 06563489fa39f070645fddc211cdeb7948d653a6
     """Download a song or playlist using yt-dlp."""
     downloads_folder = Path(user_downloads_dir())
 
@@ -22,7 +26,11 @@ def download_song(url: str, download_type: str = "single"):
     ] + (["--yes-playlist"] if download_type == "playlist" else []) + [url]
 
     try:
+<<<<<<< HEAD
         _ = subprocess.run(command, check=True)
+=======
+        subprocess.run(command, check=True)
+>>>>>>> 06563489fa39f070645fddc211cdeb7948d653a6
         print("\nDownload complete!")
     except subprocess.CalledProcessError:
         print("\nDownload failed. Please check the URL and try again.")
