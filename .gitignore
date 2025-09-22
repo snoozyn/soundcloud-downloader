@@ -185,3 +185,7 @@ Thumbs.db
 # but is often added independently. It's a duplicate, but a useful one to
 # highlight.
 .pytest_cache/
+
+# Python virtual environment
+venv/
+.venv/
