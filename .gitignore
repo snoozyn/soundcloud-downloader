@@ -189,3 +189,6 @@ Thumbs.db
 # Python virtual environment
 venv/
 .venv/
+
+# AI Assistance
+AGENTS.md
